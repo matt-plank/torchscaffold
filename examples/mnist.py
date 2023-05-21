@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import torch
 import torch.nn as nn
 import torch.optim as optim
+from torch.utils.data import DataLoader
 from torchvision import datasets, transforms
 
 from torchscaffold import layers
@@ -54,24 +55,29 @@ def args_from_cli() -> argparse.Namespace:
     return args
 
 
-def main():
-    args = args_from_cli()
-
-    # Load data
+def train_test_data() -> tuple[DataLoader, DataLoader]:
+    """Return the datasets used for training and testing."""
     transform = transforms.Compose([transforms.ToTensor(), transforms.Normalize((0.0,), (1.0,))])
     trainset = datasets.MNIST(root="~/.pytorch/MNIST_data", train=True, download=True, transform=transform)
-    train_loader = torch.utils.data.DataLoader(trainset, batch_size=64, shuffle=True)
+    train_loader = DataLoader(trainset, batch_size=64, shuffle=True)
 
     testset = datasets.MNIST(root="~/.pytorch/MNIST_data", train=False, download=True, transform=transform)
-    test_loader = torch.utils.data.DataLoader(testset, shuffle=True)
+    test_loader = DataLoader(testset, shuffle=True)
 
-    # Create model
+    return train_loader, test_loader
+
+
+def main():
+    """Train a convolutional neural network on the MNIST dataset and plot the training process."""
+    args = args_from_cli()
+
+    train_loader, test_loader = train_test_data()
+
     model = Model()
 
     if args.gpu_device is not None:
         model.to(args.gpu_device)
 
-    # Train model
     trainer = ModelTrainer(
         model,
         train_loader,
@@ -83,7 +89,6 @@ def main():
 
     results = trainer.fit(args.epochs, args.learning_rate)
 
-    # Plot stats
     plt.plot(results["training_loss"], label="Loss")
     plt.plot(results["validation_loss"], label="Validation Loss")
     plt.plot(results["validation_accuracy"], label="Validation Accuracy")
