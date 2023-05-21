@@ -59,6 +59,7 @@ class ModelTrainer:
         epoch_range = trange(epochs, desc="Epochs")
         for epoch in epoch_range:
             epoch_total_loss = 0
+            loss = None
 
             for i, (inputs, labels) in tqdm(enumerate(self.training), leave=False, total=len(self.training)):
                 # Send inputs to GPU
@@ -78,6 +79,9 @@ class ModelTrainer:
                 epoch_range.set_postfix(loss=epoch_total_loss / (i + 1))
 
             # Save metrics
+            if loss is None:
+                return results
+
             results["training_loss"].append(loss.item())
             validation_metrics = self.validation_metrics()
             results["validation_loss"].append(validation_metrics[0])
