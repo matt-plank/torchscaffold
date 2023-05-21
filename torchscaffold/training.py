@@ -58,7 +58,9 @@ class ModelTrainer:
 
         epoch_range = trange(epochs, desc="Epochs")
         for epoch in epoch_range:
-            for i, (inputs, labels) in enumerate(self.training):
+            epoch_total_loss = 0
+
+            for i, (inputs, labels) in tqdm(enumerate(self.training), leave=False, total=len(self.training)):
                 # Send inputs to GPU
                 if self.gpu_device is not None:
                     inputs = inputs.to(self.gpu_device)
@@ -71,7 +73,9 @@ class ModelTrainer:
                 loss.backward()
                 self.optimizer.step()
 
-                epoch_range.set_postfix(loss=loss.item())
+                # Display average loss for this epoch for readability
+                epoch_total_loss += loss.item()
+                epoch_range.set_postfix(loss=epoch_total_loss / (i + 1))
 
             # Save metrics
             results["training_loss"].append(loss.item())

@@ -7,7 +7,7 @@ import torch.optim as optim
 from torch.utils.data import DataLoader
 from torchvision import datasets, transforms
 
-from torchscaffold import layers
+from torchscaffold import layers, plotting
 from torchscaffold.training import ModelTrainer
 
 
@@ -44,22 +44,23 @@ class Model(nn.Module):
         return x
 
 
-def args_from_cli() -> argparse.Namespace:
+def cli_parser() -> argparse.ArgumentParser:
     """Parse command line arguments."""
     parser = argparse.ArgumentParser()
-    parser.add_argument("--epochs", type=int, help="Number of epochs to train for", required=True)
-    parser.add_argument("--learning-rate", type=float, help="Learning rate for the optimizer", required=True)
+    parser.add_argument("option", choices=["train"], help="Action to perform with the model")
+    parser.add_argument("--epochs", type=int, help="Number of epochs to train for")
+    parser.add_argument("--learning-rate", type=float, help="Learning rate for the optimizer")
     parser.add_argument("--gpu-device", type=int, help="GPU device to use", default=None)
-    args = parser.parse_args()
+    parser.add_argument("--batch-size", type=int, help="Batch size to use", default=64)
 
-    return args
+    return parser
 
 
-def train_test_data() -> tuple[DataLoader, DataLoader]:
+def train_test_data(batch_size: int) -> tuple[DataLoader, DataLoader]:
     """Return the datasets used for training and testing."""
     transform = transforms.Compose([transforms.ToTensor(), transforms.Normalize((0.0,), (1.0,))])
     trainset = datasets.MNIST(root="~/.pytorch/MNIST_data", train=True, download=True, transform=transform)
-    train_loader = DataLoader(trainset, batch_size=64, shuffle=True)
+    train_loader = DataLoader(trainset, batch_size=batch_size, shuffle=True)
 
     testset = datasets.MNIST(root="~/.pytorch/MNIST_data", train=False, download=True, transform=transform)
     test_loader = DataLoader(testset, shuffle=True)
@@ -69,34 +70,39 @@ def train_test_data() -> tuple[DataLoader, DataLoader]:
 
 def main():
     """Train a convolutional neural network on the MNIST dataset and plot the training process."""
-    args = args_from_cli()
+    parser = cli_parser()
+    args = parser.parse_args()
 
-    train_loader, test_loader = train_test_data()
+    if args.option == "train":
+        if not args.epochs:
+            parser.error("The --epochs argument is required when training")
 
-    model = Model()
+        if not args.learning_rate:
+            parser.error("The --learning-rate argument is required when training")
 
-    if args.gpu_device is not None:
-        model.to(args.gpu_device)
+        train_loader, test_loader = train_test_data(args.batch_size)
 
-    trainer = ModelTrainer(
-        model,
-        train_loader,
-        test_loader,
-        optim.Adam(model.parameters(), lr=args.learning_rate),
-        nn.CrossEntropyLoss(),
-        gpu_device=args.gpu_device,
-    )
+        model = Model()
 
-    results = trainer.fit(args.epochs, args.learning_rate)
+        if args.gpu_device is not None:
+            model.to(args.gpu_device)
 
-    plt.plot(results["training_loss"], label="Loss")
-    plt.plot(results["validation_loss"], label="Validation Loss")
-    plt.plot(results["validation_accuracy"], label="Validation Accuracy")
-    plt.legend()
-    plt.title("Loss")
-    plt.xlabel("Epoch")
-    plt.ylabel("Loss")
-    plt.show()
+        trainer = ModelTrainer(
+            model,
+            train_loader,
+            test_loader,
+            optim.Adam(model.parameters(), lr=args.learning_rate),
+            nn.CrossEntropyLoss(),
+            gpu_device=args.gpu_device,
+        )
+
+        results = trainer.fit(args.epochs, args.learning_rate)
+
+        # Show several figures at the same time
+        fig, axes = plt.subplots(2, 1, figsize=(10, 5))
+        plotting.draw_loss_on_axes(results["training_loss"], results["validation_loss"], axes[0])
+        plotting.draw_accuracy_on_axes(results["validation_accuracy"], axes[1])
+        plt.show()
 
 
 if __name__ == "__main__":
