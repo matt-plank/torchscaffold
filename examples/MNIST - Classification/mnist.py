@@ -8,7 +8,7 @@ from torch.utils.data import DataLoader
 from torchvision import datasets, transforms
 
 from torchscaffold import layers, plotting
-from torchscaffold.training import ModelTrainer
+from torchscaffold.training.model_trainer import ModelTrainer
 
 
 class Model(nn.Module):
