@@ -49,16 +49,12 @@ class GANTrainer:
 
         # Make predictions about known real images
         predictions_real = self.discriminator(real_data)
-
-        all_ones = torch.ones_like(predictions_real).to(self.gpu_device)
-
+        all_ones = torch.ones_like(predictions_real, device=self.gpu_device)
         loss_for_real_data = self.criterion(predictions_real, all_ones)
 
         # Make predictions about known fake images
         predictions_fake = self.discriminator(fake_data.detach())
-
-        all_zeros = torch.zeros_like(predictions_fake).to(self.gpu_device)
-
+        all_zeros = torch.zeros_like(predictions_fake, device=self.gpu_device)
         loss_for_fake_data = self.criterion(predictions_fake, all_zeros)
 
         # Update the discriminator
@@ -75,9 +71,7 @@ class GANTrainer:
 
         # Loss is based on how well the discriminator can identify fakes
         discriminator_predictions = self.discriminator(fake_data)
-
-        all_ones = torch.ones_like(discriminator_predictions).to(self.gpu_device)
-
+        all_ones = torch.ones_like(discriminator_predictions, device=self.gpu_device)
         loss = self.criterion(discriminator_predictions, all_ones)
 
         loss.backward()
