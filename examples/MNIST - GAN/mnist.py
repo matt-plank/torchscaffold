@@ -49,8 +49,8 @@ def main():
         discriminator = DiscriminatorModel()
         discriminator.to(GPU_DEVICE)
 
-        generator_optimizer = optim.Adam(generator.parameters(), lr=1e-5)
-        discriminator_optimizer = optim.Adam(discriminator.parameters(), lr=1e-7)
+        generator_optimizer = optim.Adam(generator.parameters(), lr=args.lr_generator)
+        discriminator_optimizer = optim.Adam(discriminator.parameters(), lr=args.lr_discriminator)
 
         criterion = nn.BCELoss()
 
@@ -71,11 +71,14 @@ def main():
         trainer.fit(args.epochs)
 
         # Show example
-        _, new_image = generator.random(1, GPU_DEVICE)
-        # prediction = discriminator(new_image)
+        _, new_image = generator.random(9, GPU_DEVICE)
 
-        plt.imshow(new_image.squeeze().detach().cpu().numpy(), cmap="gray")
-        # plt.title(prediction)
+        # Show 9x9 grid of images
+        fig, ax = plt.subplots(3, 3)
+        for i in range(3):
+            for j in range(3):
+                ax[i, j].imshow(new_image[i * 3 + j].squeeze().cpu().detach().numpy(), cmap="gray")
+
         plt.show()
 
 
