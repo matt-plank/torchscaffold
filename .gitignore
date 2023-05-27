@@ -214,3 +214,6 @@ pyrightconfig.json
 
 # PyTorch custom models
 *.pth
+
+# Config files for examples
+config.yaml
